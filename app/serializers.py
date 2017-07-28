@@ -1,12 +1,18 @@
 from rest_framework import serializers 
-from app.models import Article
-from django.contrib.auth.models import User 
+from app.models import Article, Clickthrough
+from django.contrib.auth.models import User
 
 class ArticleSerializer(serializers.ModelSerializer): 
 
     class Meta: 
         model = Article 
         fields = ('id', 'title', 'description', 'imageUrl', 'link', 'bias')
+
+class ClickthroughSerializer(serializers.ModelSerializer): 
+
+    class Meta: 
+        model = Clickthrough
+        fields = ('id', 'user', 'article')
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
