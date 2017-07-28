@@ -6,6 +6,7 @@ from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter() 
 router.register(r'articles', views.ArticleViewSet)
+router.register(r'users', views.UserViewSet)
 
 urlpatterns = [
 	url(r'^', include(router.urls)),
