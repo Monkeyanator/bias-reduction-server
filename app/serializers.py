@@ -12,7 +12,7 @@ class ClickthroughSerializer(serializers.ModelSerializer):
 
     class Meta: 
         model = Clickthrough
-        fields = ('id', 'user', 'article')
+        fields = ('id', 'article')
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
