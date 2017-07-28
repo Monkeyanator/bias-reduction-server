@@ -12,7 +12,8 @@ class ClickthroughSerializer(serializers.ModelSerializer):
 
     class Meta: 
         model = Clickthrough
-        fields = ('id', 'article')
+        fields = ('id', 'user', 'article')
+        read_only_fields = ('user',)
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
