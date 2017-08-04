@@ -7,10 +7,8 @@ from django.dispatch import receiver
 from django.contrib.auth.models import User 
 from rest_framework.authtoken.models import Token
 
-@receiver(post_save, sender=settings.AUTH_USER_MODEL)
-def create_auth_token(sender, instance=None, created=False, **kwargs):
-    if created:
-        Token.objects.create(user=instance)
+import os
+import csv
 
 class Article(models.Model): 
 	
@@ -32,3 +30,31 @@ class Clickthrough(models.Model):
 
 	class Meta: 
 		ordering = ('created',)
+
+
+#-=-=-=-
+#RECEIVERS
+#-=-=-=-
+
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def create_auth_token(sender, instance=None, created=False, **kwargs):
+    if created:
+        Token.objects.create(user=instance)
+
+
+@receiver(post_save, sender= Clickthrough)
+def update_clickthrough_csv(sender, instance= None, created= False, **kwargs): 
+
+	BASE = os.path.dirname(os.path.abspath(__file__))
+	CLICKTHROUGH_CSV_PATH = os.path.join(BASE, 'clickthroughs.csv') 
+
+	rows = [instance.user.id, instance.article.id]
+	print rows
+
+	with open(CLICKTHROUGH_CSV_PATH, 'a') as clickthroughFile: 
+		writer = csv.writer(clickthroughFile)
+		writer.writerow([instance.user.id, instance.article.id])
+
+	print "Updated Clickthrough csv"
+
+

@@ -10,6 +10,10 @@ from app.models import Article, Clickthrough
 import os 
 import csv
 
+#-=-=-=-=-=-=-=-
+#REST API default routes
+#-=-=-=-=-=-=-=-
+
 class ArticleViewSet(viewsets.ModelViewSet): 
 	queryset = Article.objects.all() 
 	serializer_class = ArticleSerializer
@@ -27,15 +31,18 @@ class UserViewSet(viewsets.ModelViewSet):
 	serializer_class = UserSerializer
 	model = User
 
+
+#-=-=-=-=-=-=-
+#Data model updates 
+#-=-=-=-=-=-=-
+
 #route that will load our articles from csv file
-def loadArticles(request):
+def load_articles(request):
 	BASE = os.path.dirname(os.path.abspath(__file__))
 	ARTICLE_CSV_PATH = os.path.join(BASE, 'articles.csv')
 	with open(ARTICLE_CSV_PATH, 'r') as articleFile: 
 		reader = csv.reader(articleFile)
 		for article in reader: 
-
-			print article
     		
 			if article[0] == 'Title': 
 				continue
