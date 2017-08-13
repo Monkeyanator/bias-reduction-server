@@ -5,7 +5,7 @@ import numpy as np
 #Subclasses should provide prediction methods,
 #And this base class can load data/ provide generic model evaluation 
 
-class Algorithm: 
+class Algorithm(object): 
 
 	def __init__(self): 
 		#keys are user id's, values are lists of article id's 
@@ -33,11 +33,15 @@ class UserBasedKNN(Algorithm):
     #should implement constructor
     #which calls super constructor
     #and sets value for k 
+    def __init__(self, knn): 
+        self.knn = knn 
+        super(UserBasedKNN, self).__init__()
+
 
     def recommend(self, user, amount): 
 
         recommendations = {}
-        nearest_neighbors = self.kNearestNeighbors(user, 3)
+        nearest_neighbors = self.kNearestNeighbors(user, self.knn)
 
         userRatings = self.clickthroughData[user] 
         totalDistsance = 0.0 
