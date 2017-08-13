@@ -2,10 +2,12 @@
 from __future__ import unicode_literals
 from django.shortcuts import render
 from django.contrib.auth.models import User
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from rest_framework import viewsets, permissions 
 from app.serializers import ArticleSerializer, UserSerializer, ClickthroughSerializer
 from app.models import Article, Clickthrough
+
+from prediction import UserBasedKNN
 
 import os 
 import csv
@@ -31,6 +33,33 @@ class UserViewSet(viewsets.ModelViewSet):
 	serializer_class = UserSerializer
 	model = User
 
+
+
+#-=-=-=-=-=-=-=-=-=-
+#Prediction endpoints
+#-=-=-=-=-=-=-=-=-=-
+
+def user_based_knn(request, userId): 
+
+	print "Recommendations for: ", userId 
+
+	algo = UserBasedKNN(3)
+
+	BASE = os.path.dirname(os.path.abspath(__file__))
+	ARTICLE_CSV_PATH = os.path.join(BASE, 'clickthroughs.csv')
+
+	algo.load_clickthrough_file(ARTICLE_CSV_PATH)
+	recommendations = algo.recommend(int(userId), 3)
+
+	articleIds = [recommendation[0] for recommendation in recommendations]
+
+	return render_article_list(articleIds)
+
+
+def render_article_list(articleIds):
+	articleQueryset = Article.objects.filter(pk__in= articleIds)
+	serializer = ArticleSerializer(articleQueryset, many= True)
+	return JsonResponse(serializer.data, safe= False)
 
 #-=-=-=-=-=-=-
 #Data model updates 
