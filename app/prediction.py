@@ -35,11 +35,24 @@ class ItemBasedKNN(Algorithm):
     #pass in amount of neighbors to use
     def __init__(self, knn): 
         self.knn = knn 
+        self.inv_map = {}
+
         super(ItemBasedKNN, self).__init__() 
+
+
+    #override loading of clickthrough file to include the initialization of inverted map 
+    def load_clickthrough_file(self, filePath): 
+        #call super method
+        super(ItemBasedKNN, self).load_clickthrough_file(filePath)
+
+        for userId, articleList in self.clickthroughData.iteritems(): 
+            for article in articleList:
+                self.inv_map.setdefault(article,[])
+                self.inv_map[article].append(userId)
 
     #returns sorted list of tuples in the form (ARTICLE_ID, SIMILARITY)
     def kNearestNeighbors(self, user, k):
-        similarities = [] 
+        similarities = []
         for currentUserId in self.clickthroughData: 
             if not currentUserId == user: 
                 similarities.append((

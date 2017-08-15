@@ -41,21 +41,22 @@ class UserViewSet(viewsets.ModelViewSet):
 
 def user_based_knn(request, userId): 
 
-	print "Recommendations for: ", userId 
-
+	#set nearest neighbors to use
 	algo = UserBasedKNN(3)
 
 	BASE = os.path.dirname(os.path.abspath(__file__))
 	ARTICLE_CSV_PATH = os.path.join(BASE, 'clickthroughs.csv')
-
+	#load in clickthrough data
 	algo.load_clickthrough_file(ARTICLE_CSV_PATH)
-	recommendations = algo.recommend(int(userId), 3)
 
+	#find article recommendations for given user and put them in list
+	recommendations = algo.recommend(int(userId), 3)
 	articleIds = [recommendation[0] for recommendation in recommendations]
 
 	return render_article_list(articleIds)
 
 
+#useful for making responses for the recommendation functions
 def render_article_list(articleIds):
 	articleQueryset = Article.objects.filter(pk__in= articleIds)
 	serializer = ArticleSerializer(articleQueryset, many= True)
