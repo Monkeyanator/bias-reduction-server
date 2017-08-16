@@ -1,51 +1,57 @@
 import csv 
 import numpy as np
+import pandas as pd
 
 #Base class for all algorithms 
 #Subclasses should provide prediction methods,
 #And this base class can load data/ provide generic model evaluation 
 
-class Algorithm(object): 
+class PredictionAlgorithm(object):
 
-	def __init__(self): 
-		#keys are user id's, values are lists of article id's 
-		self.clickthroughData = {}
+    def __init__(self):
+        self.clickthroughMatrix = None
+        self.clickthroughData = []
 
-	def load_clickthrough_file(self, filePath): 
+    def load_clickthrough_file(self, filePath):
 
-		#load csv into data
-		with open(filePath) as csvFile: 
-			reader = csv.reader(csvFile, delimiter=",") 
-			for clickthrough in reader: 
-				userId = int(clickthrough[0])
-				articleId = int(clickthrough[1])
+        #load csv into data
+        with open(filePath) as csvFile:
+            reader = csv.reader(csvFile, delimiter=",")
+            for clickthrough in reader:
+                userId = int(clickthrough[0])
+                articleId = int(clickthrough[1])
 
-				if not userId in self.clickthroughData:
-					self.clickthroughData[userId] = [articleId]
+                self.clickthroughData.append((userId, articleId))
 
-				else: 
-					#only add if unique 
-					if not articleId in self.clickthroughData[userId]: 
-						self.clickthroughData[userId].append(articleId) 
+        USER_COUNT = max(self.clickthroughData, key= lambda x: x[0])[0]
+        ARTICLE_COUNT = max(self.clickthroughData, key= lambda x: x[1])[1]
+        self.clickthroughMatrix = np.zeros((USER_COUNT, ARTICLE_COUNT))
 
+        for clickthrough in self.clickthroughData:
+            USER_INDEX = clickthrough[0] - 1
+            ARTICLE_INDEX = clickthrough[1] - 1
+
+            self.clickthroughMatrix[USER_INDEX][ARTICLE_INDEX] = 1
+
+        print self.clickthroughMatrix
 
 #predicts based on how the user rated similar items
-class ItemBasedKNN(Algorithm):
+class ItemBasedKNN(PredictionAlgorithm):
 
     #pass in amount of neighbors to use
-    def __init__(self, knn): 
-        self.knn = knn 
+    def __init__(self, knn):
+        self.knn = knn
         self.inv_map = {}
 
-        super(ItemBasedKNN, self).__init__() 
+        super(ItemBasedKNN, self).__init__()
 
 
-    #override loading of clickthrough file to include the initialization of inverted map 
-    def load_clickthrough_file(self, filePath): 
+    #override loading of clickthrough file to include the initialization of inverted map
+    def load_clickthrough_file(self, filePath):
         #call super method
         super(ItemBasedKNN, self).load_clickthrough_file(filePath)
 
-        for userId, articleList in self.clickthroughData.iteritems(): 
+        for userId, articleList in self.clickthroughData.iteritems():
             for article in articleList:
                 self.inv_map.setdefault(article,[])
                 self.inv_map[article].append(userId)
@@ -53,56 +59,56 @@ class ItemBasedKNN(Algorithm):
     #returns sorted list of tuples in the form (ARTICLE_ID, SIMILARITY)
     def kNearestNeighbors(self, user, k):
         similarities = []
-        for currentUserId in self.clickthroughData: 
-            if not currentUserId == user: 
+        for currentUserId in self.clickthroughData:
+            if not currentUserId == user:
                 similarities.append((
-                    currentUserId, 
+                    currentUserId,
                     self._cosine(
-                        self.clickthroughData[currentUserId], 
+                        self.clickthroughData[currentUserId],
                         self.clickthroughData[user]
                     )
                 ))
 
         similarities = sorted(similarities, key = lambda x: x[1])
-        return similarities[:k] 
+        return similarities[:k]
 
 
     #sparse data calls for cosine similarity between users
     def _cosine(self, r1, r2):
 
         #since vectors are sets of article IDs, we can use this fact for faster magnitude calc
-        m1 = len(r1) ** 0.5 
+        m1 = len(r1) ** 0.5
         m2 = len(r2) ** 0.5
 
         #iterate over one vector checking for values for same key in other
-        #NOTE: non-shared keys do not contribute to dot product 
+        #NOTE: non-shared keys do not contribute to dot product
         #since only possible result for dot pairs is 1 * 1, we can just add one for matches
-        dotProduct = 0 
-        for article in r1: 
+        dotProduct = 0
+        for article in r1:
             if article in r2:
                 dotProduct += 1
         return dotProduct / (m1 * m2)
 
 #predicts based on what similar users liked
-class UserBasedKNN(Algorithm): 
+class UserBasedKNN(PredictionAlgorithm):
 
-    #pass in amount of neighbors to use 
-    def __init__(self, knn): 
-        self.knn = knn 
+    #pass in amount of neighbors to use
+    def __init__(self, knn):
+        self.knn = knn
         super(UserBasedKNN, self).__init__()
 
 
-    def recommend(self, user, amount): 
+    def recommend(self, user, amount):
 
         #dict that will store articles and recommendation strengths
         recommendations = {}
         nearest_neighbors = self.kNearestNeighbors(user, self.knn)
 
-        userRatings = self.clickthroughData[user] 
-        totalDistsance = 0.0 
+        userRatings = self.clickthroughData[user]
+        totalDistsance = 0.0
 
         #sum of distances, used to weight recommendations
-        for user in nearest_neighbors: 
+        for user in nearest_neighbors:
             totalDistsance += user[1]
 
         #actual KNN method
@@ -112,13 +118,13 @@ class UserBasedKNN(Algorithm):
             #gives list of all articles current user clicked on
             currentUserRatings = self.clickthroughData[currentUsername]
 
-            for article in currentUserRatings: 
+            for article in currentUserRatings:
                 if not article in userRatings:
                     #on a normal rating system, we would multiply the current weight by the user rating
                     #since we are on binary scale, user rating is one, so we can ignore it and just add the weight
                     if not article in recommendations:
                         recommendations[article] = currentWeight
-                    else: 
+                    else:
                         recommendations[article] += currentWeight
 
         recommendations = list(recommendations.items())
@@ -130,32 +136,32 @@ class UserBasedKNN(Algorithm):
 
     #returns sorted list of tuples in the form (USER_ID, SIMILARITY)
     def kNearestNeighbors(self, user, k):
-        similarities = [] 
-        for currentUserId in self.clickthroughData: 
-            if not currentUserId == user: 
+        similarities = []
+        for currentUserId in self.clickthroughData:
+            if not currentUserId == user:
                 similarities.append((
-                	currentUserId, 
-                	self._cosine(
-                		self.clickthroughData[currentUserId], 
-                		self.clickthroughData[user]
-                	)
+                    currentUserId,
+                    self._cosine(
+                        self.clickthroughData[currentUserId],
+                        self.clickthroughData[user]
+                    )
                 ))
 
         similarities = sorted(similarities, key = lambda x: x[1])
-        return similarities[:k] 
+        return similarities[:k]
 
     #sparse data calls for cosine similarity between users
     def _cosine(self, r1, r2):
 
         #since vectors are sets of article IDs, we can use this fact for faster magnitude calc
-        m1 = len(r1) ** 0.5 
+        m1 = len(r1) ** 0.5
         m2 = len(r2) ** 0.5
 
         #iterate over one vector checking for values for same key in other
-        #NOTE: non-shared keys do not contribute to dot product 
+        #NOTE: non-shared keys do not contribute to dot product
         #since only possible result for dot pairs is 1 * 1, we can just add one for matches
-        dotProduct = 0 
-        for article in r1: 
+        dotProduct = 0
+        for article in r1:
             if article in r2:
                 dotProduct += 1
         return dotProduct / (m1 * m2)

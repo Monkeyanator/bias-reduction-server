@@ -14,7 +14,7 @@ urlpatterns = [
 	url(r'^', include(router.urls)),
     url(r'^api-token-auth/', views.obtain_auth_token),
     url(r'^load-articles/', load_articles),
-    url(r'^user-based-knn/(?P<userId>[0-9]+)/$', user_based_knn),
+    url(r'^recommendations/user-based-knn/(?P<userId>[0-9]+)/$', user_based_knn),
 ]
 
 urlpatterns += [
