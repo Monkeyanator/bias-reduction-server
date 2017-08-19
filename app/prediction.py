@@ -1,6 +1,7 @@
 import csv 
 import numpy as np
 import pandas as pd
+from scipy import spatial
 
 #Base class for all algorithms 
 #Subclasses should provide prediction methods,
@@ -8,6 +9,8 @@ import pandas as pd
 
 class PredictionAlgorithm(object):
 
+    #clickthrough matrix is arranged such that user with ID 1 
+    #would be clickthroughMatrix[0] (due to nature of arrays)
     def __init__(self):
         self.clickthroughMatrix = None
         self.clickthroughData = []
@@ -23,9 +26,10 @@ class PredictionAlgorithm(object):
 
                 self.clickthroughData.append((userId, articleId))
 
-        USER_COUNT = max(self.clickthroughData, key= lambda x: x[0])[0]
-        ARTICLE_COUNT = max(self.clickthroughData, key= lambda x: x[1])[1]
-        self.clickthroughMatrix = np.zeros((USER_COUNT, ARTICLE_COUNT))
+        #set these global constants
+        self.USER_COUNT = max(self.clickthroughData, key= lambda x: x[0])[0]
+        self.ARTICLE_COUNT = max(self.clickthroughData, key= lambda x: x[1])[1]
+        self.clickthroughMatrix = np.zeros((self.USER_COUNT, self.ARTICLE_COUNT))
 
         for clickthrough in self.clickthroughData:
             USER_INDEX = clickthrough[0] - 1
@@ -64,8 +68,8 @@ class ItemBasedKNN(PredictionAlgorithm):
                 similarities.append((
                     currentUserId,
                     self._cosine(
-                        self.clickthroughData[currentUserId],
-                        self.clickthroughData[user]
+                        currentUserId,
+                        user
                     )
                 ))
 
@@ -74,20 +78,11 @@ class ItemBasedKNN(PredictionAlgorithm):
 
 
     #sparse data calls for cosine similarity between users
-    def _cosine(self, r1, r2):
-
-        #since vectors are sets of article IDs, we can use this fact for faster magnitude calc
-        m1 = len(r1) ** 0.5
-        m2 = len(r2) ** 0.5
-
-        #iterate over one vector checking for values for same key in other
-        #NOTE: non-shared keys do not contribute to dot product
-        #since only possible result for dot pairs is 1 * 1, we can just add one for matches
-        dotProduct = 0
-        for article in r1:
-            if article in r2:
-                dotProduct += 1
-        return dotProduct / (m1 * m2)
+    def _cosine(self, user1, user2):
+        return scipy.spatial.distance.cosine(
+            self.clickthroughMatrix[user1],
+            self.clickthroughMatrix[user2]
+        )
 
 #predicts based on what similar users liked
 class UserBasedKNN(PredictionAlgorithm):
@@ -104,7 +99,8 @@ class UserBasedKNN(PredictionAlgorithm):
         recommendations = {}
         nearest_neighbors = self.kNearestNeighbors(user, self.knn)
 
-        userRatings = self.clickthroughData[user]
+        #binary vector of user ratings
+        userRatings = self.clickthroughMatrix[user-1]
         totalDistsance = 0.0
 
         #sum of distances, used to weight recommendations
@@ -115,17 +111,19 @@ class UserBasedKNN(PredictionAlgorithm):
         for user in nearest_neighbors:
             currentUsername = user[0]
             currentWeight = user[1] / totalDistsance
-            #gives list of all articles current user clicked on
-            currentUserRatings = self.clickthroughData[currentUsername]
+            #binary vector of all articles current user has rated
+            currentUserRatings = self.clickthroughMatrix[currentUsername-1]
 
-            for article in currentUserRatings:
-                if not article in userRatings:
+            for articleId in range(len(currentUserRatings)):
+                #if current user rated item, and our target user did not 
+                if currentUserRatings[articleId] == 1 and userRatings[articleId] == 0:
                     #on a normal rating system, we would multiply the current weight by the user rating
                     #since we are on binary scale, user rating is one, so we can ignore it and just add the weight
-                    if not article in recommendations:
-                        recommendations[article] = currentWeight
+                    #must add one  to recommendation dict since we are dealing in indexes 
+                    if not articleId + 1 in recommendations:
+                        recommendations[articleId + 1] = currentWeight
                     else:
-                        recommendations[article] += currentWeight
+                        recommendations[articleId + 1] += currentWeight
 
         recommendations = list(recommendations.items())
 
@@ -134,34 +132,29 @@ class UserBasedKNN(PredictionAlgorithm):
 
         return recommendations[:amount]
 
-    #returns sorted list of tuples in the form (USER_ID, SIMILARITY)
+    #returns sorted list of tuples in the form (ARTICLE_ID, SIMILARITY)
     def kNearestNeighbors(self, user, k):
         similarities = []
-        for currentUserId in self.clickthroughData:
+        for currentUserId in xrange(1,self.USER_COUNT+1):
             if not currentUserId == user:
+                print currentUserId, user
                 similarities.append((
                     currentUserId,
                     self._cosine(
-                        self.clickthroughData[currentUserId],
-                        self.clickthroughData[user]
+                        currentUserId,
+                        user
                     )
                 ))
 
         similarities = sorted(similarities, key = lambda x: x[1])
         return similarities[:k]
 
-    #sparse data calls for cosine similarity between users
-    def _cosine(self, r1, r2):
 
-        #since vectors are sets of article IDs, we can use this fact for faster magnitude calc
-        m1 = len(r1) ** 0.5
-        m2 = len(r2) ** 0.5
+    #uses default scipy cosine similarity, super-fast because numpy
+    def _cosine(self, user1, user2):
+        distance = spatial.distance.cosine(
+            self.clickthroughMatrix[user1-1],
+            self.clickthroughMatrix[user2-1]
+        )
 
-        #iterate over one vector checking for values for same key in other
-        #NOTE: non-shared keys do not contribute to dot product
-        #since only possible result for dot pairs is 1 * 1, we can just add one for matches
-        dotProduct = 0
-        for article in r1:
-            if article in r2:
-                dotProduct += 1
-        return dotProduct / (m1 * m2)
+        return distance 
