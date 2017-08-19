@@ -77,11 +77,11 @@ class ItemBasedKNN(PredictionAlgorithm):
         return similarities[:k]
 
 
-    #sparse data calls for cosine similarity between users
-    def _cosine(self, user1, user2):
+    #cosine similarity between two ITEMS 
+    def _cosine(self, item1, item2):
         return scipy.spatial.distance.cosine(
-            self.clickthroughMatrix[user1],
-            self.clickthroughMatrix[user2]
+            self.clickthroughMatrix[:,(item1-1)],
+            self.clickthroughMatrix[:,(item2-1)]
         )
 
 #predicts based on what similar users liked
