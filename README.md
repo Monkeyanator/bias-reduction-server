@@ -52,7 +52,7 @@ This will setup the database migrations (needs to be run if changes are made to 
 
 ## Project structure
 
-The *bias_reduction_server/* directory is present mostly for setup purposes (the Django REST framework wraps their application around that folder). For the purposes of extending the code, 99% of work will be done in *app/*
+The **bias_reduction_server/** directory is present mostly for setup purposes (the Django REST framework wraps their application around that folder). For the purposes of extending the code, 99% of work will be done in **app/**
 
 * **models.py** Defines database models. If this is changed, must run
 * **serializers.py** Takes data from database and serialize into JSON or vice-versa
