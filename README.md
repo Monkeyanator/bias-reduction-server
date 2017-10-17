@@ -54,12 +54,12 @@ This will setup the database migrations (needs to be run if changes are made to 
 
 The *bias_reduction_server/* directory is present mostly for setup purposes (the Django REST framework wraps their application around that folder). For the purposes of extending the code, 99% of work will be done in *app/*
 
-*models.py* Defines database models. If this is changed, must run
-*serializers.py* Takes data from database and serialize into JSON or vice-versa
-*urls.py* Routes for the web application (i.e. where the API can point to)
-*views.py* Responsible for rendering responses pointed to in URLs (most routes endpoints automatically generated with Django REST framework)
-*prediction.py* handles all the recommendation logic (i.e. all the data science lives here). In the future, as the logic becomes more and more byzantine, should extend this into a folder with each subclassed method in its own file (or pull in a 3rd party lib).
+* **models.py** Defines database models. If this is changed, must run
+* **serializers.py** Takes data from database and serialize into JSON or vice-versa
+* **urls.py** Routes for the web application (i.e. where the API can point to)
+* **views.py** Responsible for rendering responses pointed to in URLs (most routes endpoints automatically generated with Django REST framework)
+* **prediction.py** handles all the recommendation logic (i.e. all the data science lives here). In the future, as the logic becomes more and more byzantine, should extend this into a folder with each subclassed method in its own file (or pull in a 3rd party lib).
 
 ## Prediction methods
 
-The end-goal for the project is to make predictions using item-based filtering, collaborative filtering, matrix factorization methods, and compare the results with a novel method. 
+The end-goal for the project is to make predictions using item-based filtering, collaborative filtering, matrix factorization methods, and compare the results with a novel method.
