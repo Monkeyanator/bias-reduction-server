@@ -48,7 +48,11 @@ To setup the database (SQLite for development server), use the following command
     $ python manage.py makemigrations
     $ python manage.py migrate
 
-This will setup the database migrations (needs to be run if changes are made to models) and apply them.
+This will setup the database migrations (needs to be run if changes are made to models) and apply them. After this, to run the server, run
+
+    $ python manage.py runserver
+
+At that point, the server should be running, and accepting requests! 
 
 ## Project structure
 
