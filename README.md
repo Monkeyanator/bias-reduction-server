@@ -62,4 +62,8 @@ The **bias_reduction_server/** directory is present mostly for setup purposes (t
 
 ## Prediction methods
 
-The end-goal for the project is to make predictions using item-based filtering, collaborative filtering, matrix factorization methods, and compare the results with a novel method.
+The end-goal for the project is to make predictions using item-based filtering, collaborative filtering, matrix factorization methods, and compare the results with a novel method. In the future, I'm hoping for an admin console that can tweak the model's hyperparameters.
+
+## Where do the articles come from?
+
+Tragically, the information for these articles were entered by-hand into [this spreadsheet](https://docs.google.com/spreadsheets/d/1ZKsbYYWZH0Y1-7BlJxrLx-m2D3aHKuJYSHleZ5ZNgVU/edit#gid=0), with the data taken from [this fantastic site](https://www.allsides.com/). Last I checked, the site didn't offer a programmatic API. Of course we could build a scraper, but I haven't reached that point yet (feel free to submit a pull request!)
